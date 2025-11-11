@@ -17,6 +17,20 @@ public class BoundedVolumeHierarchy implements BVH
         Y  // y-axis
     }
 
+    public BoundedVolumeHierarchy() {
+        this.splitMethod = SplitMethod.SPLIT_MEDIAN;
+        this.root = null;
+    }
+
+    /**
+     * Constructs a BoundedVolumeHierarchy with a given list of shapes and max shapes per node.
+     * @param shapes The initial list of shapes to build the BVH from.
+     */
+    public BoundedVolumeHierarchy(List<Shape> shapes) {
+        this();
+        buildBVH(shapes);
+    }
+
     public static void main(String[] args) {
         BoundedVolumeHierarchy bvh = new BoundedVolumeHierarchy();
         Random rand = new Random();
@@ -345,36 +359,39 @@ public class BoundedVolumeHierarchy implements BVH
             return null;
         }
 
-        Point originInt = new Point((int) origin.getX(), (int) origin.getY()); // Explicit conversion to java.awt.Point
+        Point originInt = new Point((int) origin.getX(), (int) origin.getY());
 
         if (!node.bounds.doesRayIntersect(originInt, direction)) {
             return null;
         }
 
         if (node.isLeaf()) {
-            Point2D.Double intersectionPoint = node.shape.findIntersection(originInt, direction); // Assuming this takes Point
+            Point2D.Double intersectionPoint = node.shape.findIntersection(originInt, direction);
             if (intersectionPoint != null) {
                 double hitDistance = BVH.distanceBetweenPoints(origin, intersectionPoint);
-                if (hitDistance < closestDistance) {
+                if (hitDistance < closestDistance) { // This check is correct for leaf nodes
                     return new IntersectionInfo(node.shape, hitDistance);
                 }
             }
             return null;
         }
 
-        IntersectionInfo leftHit = intersectRayRecursive(node.leftChild, origin, direction, closestDistance);
-        IntersectionInfo rightHit = intersectRayRecursive(node.rightChild, origin, direction, closestDistance);
+        IntersectionInfo currentClosestHit = null;
 
-        // Determine the overall closest hit from this subtree
-        if (leftHit == null && rightHit == null) {
-            return null;
-        } else if (leftHit == null) {
-            return rightHit;
-        } else if (rightHit == null) {
-            return leftHit;
-        } else {
-            return (leftHit.hitDistance < rightHit.hitDistance) ? leftHit : rightHit;
+        IntersectionInfo leftHit = intersectRayRecursive(node.leftChild, origin, direction, closestDistance);
+        if (leftHit != null) {
+            currentClosestHit = leftHit;
+            closestDistance = Math.min(closestDistance, leftHit.hitDistance);
         }
+
+        IntersectionInfo rightHit = intersectRayRecursive(node.rightChild, origin, direction, closestDistance);
+        if (rightHit != null) {
+            if (currentClosestHit == null || rightHit.hitDistance < currentClosestHit.hitDistance) {
+                currentClosestHit = rightHit;
+            }
+        }
+
+        return currentClosestHit;
     }
 
     @Override
