@@ -33,10 +33,23 @@ public class BoundedVolumeHierarchy implements BVH
 
     public static void main(String[] args) {
         BoundedVolumeHierarchy bvh = new BoundedVolumeHierarchy();
+        ArrayList<Triangle> triangles = new ArrayList<>();
         Random rand = new Random();
-        for (int i = 0; i < 100; i++) {
-            bvh.insert(new Triangle(new Point(rand.nextInt(10), rand.nextInt(10)), new Point(rand.nextInt(10), rand.nextInt(10)), new Point(rand.nextInt(10), rand.nextInt(10))));
+        for (int i = 0; i < 10; i++) {
+            Triangle tri = new Triangle(new Point(rand.nextInt(10), rand.nextInt(10)), new Point(rand.nextInt(10), rand.nextInt(10)), new Point(rand.nextInt(10), rand.nextInt(10)));
+            bvh.insert(tri);
+            triangles.add(tri);
         }
+        System.out.println("Triangles: " + triangles.size());
+        System.out.println(bvh.toStringDepths());
+
+        bvh.remove(triangles.remove(3));
+        bvh.remove(triangles.remove(8));
+        bvh.remove(triangles.remove(5));
+
+        System.out.println("Removed triangles: " + triangles.size());
+        System.out.println(bvh.toStringDepths());
+
     }
 
     @Override
@@ -409,15 +422,37 @@ public class BoundedVolumeHierarchy implements BVH
             return;
         }
 
-        for (int i = 0; i < depth; i++) {
-            sb.append("\t");
-        }
+        sb.append("\t".repeat(Math.max(0, depth)));
 
         sb.append(node);
         sb.append("\n");
 
         toStringRecursive(node.leftChild, depth + 1, sb);
         toStringRecursive(node.rightChild, depth + 1, sb);
+    }
+
+    public String toStringDepths() {
+        if (this.root == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        toStringDepthsRecursive(this.root, 0, sb);
+        return sb.toString();
+    }
+
+    private void toStringDepthsRecursive(BVHNode node, int depth, StringBuilder sb) {
+        if (node == null) {
+            return;
+        }
+
+        sb.append("\t".repeat(Math.max(0, depth)));
+        int rightHeight = (node.rightChild == null) ?  0 : node.rightChild.height;
+        int leftHeight = (node.leftChild == null) ?  0 : node.leftChild.height;
+        sb.append(rightHeight - leftHeight);
+        sb.append("\n");
+
+        toStringDepthsRecursive(node.leftChild, depth + 1, sb);
+        toStringDepthsRecursive(node.rightChild, depth + 1, sb);
     }
 
     class BVHNode {

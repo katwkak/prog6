@@ -2,6 +2,7 @@ package assignment;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.Set;
@@ -16,6 +17,7 @@ public class Visualization
     private static final int GUI_HEIGHT = 400;
     private static final int SQUARE_SIZE = 21;
     private static final int SHAPE_COUNT = 10;
+    private static final int STEP_PIXELS = 5;
 
 
     /**
@@ -25,14 +27,9 @@ public class Visualization
     {
         this.virtualSquareCenter = new Point2D.Double(0, 0); // Default virtual center
         LinkedList<Shape> shapes = new LinkedList<>();
-        shapes.add(new Triangle(new Point(100, 100), new Point(0, 100), new Point(100, 0)));
-//        Random rand = new Random();
-//        for (int i = 0; i < SHAPE_COUNT; i++) {
-//            Point p1 = new Point(rand.nextInt(GUI_WIDTH), rand.nextInt(GUI_HEIGHT));
-//            Point p2 = new Point(rand.nextInt(GUI_WIDTH), rand.nextInt(GUI_HEIGHT));
-//            Point p3 = new Point(rand.nextInt(GUI_WIDTH), rand.nextInt(GUI_HEIGHT));
-//            shapes.add(new Triangle(p1, p2, p3));
-//        }
+        for (int i = 0; i < SHAPE_COUNT; i++) {
+            shapes.add(new Triangle(new Point(100 + i * 100, 100  + i * 100), new Point(0 + i * 100, 100 + i * 100), new Point(100 + i * 100, 0 + i * 100)));
+        }
         this.boundingVolumeHierarchy = new BoundedVolumeHierarchy(shapes);
         System.out.println("Bounding volume hierarchy: " + this.boundingVolumeHierarchy);
     }
@@ -66,17 +63,21 @@ public class Visualization
         Point2D.Double potentialNewCenter = new Point2D.Double(virtualSquareCenter.getX(), virtualSquareCenter.getY());
 
         switch (Character.toUpperCase(keyPressed)) {
-            case 'W': // Move up (increase Y in virtual coordinates)
-                potentialNewCenter.y ++;
+            case 'W': // Move up
+                potentialNewCenter.y += STEP_PIXELS;
+                System.out.println("up");
                 break;
-            case 'S': // Move down (decrease Y in virtual coordinates)
-                potentialNewCenter.y --;
+            case 'S': // Move down
+                potentialNewCenter.y -= STEP_PIXELS;
+                System.out.println("down");
                 break;
-            case 'A': // Move left (decrease X in virtual coordinates)
-                potentialNewCenter.x --;
+            case 'A': // Move left
+                potentialNewCenter.x -= STEP_PIXELS;
+                System.out.println("left");
                 break;
-            case 'D': // Move right (increase X in virtual coordinates)
-                potentialNewCenter.x ++;
+            case 'D': // Move right
+                potentialNewCenter.x += STEP_PIXELS;
+                System.out.println("right");
                 break;
             default:
                 return false; // Invalid key
@@ -108,6 +109,7 @@ public class Visualization
 
         // If no collision:
         this.virtualSquareCenter = potentialNewCenter; // Update position
+        System.out.println(virtualSquareCenter);
         return true;
 
     }
@@ -119,12 +121,12 @@ public class Visualization
      */
     public LinkedList<Point> drawGUI()
     {
-        LinkedList<Point> pixelsToDisplay = new LinkedList<>();
+        Set<Point> pixelsToDisplay = new HashSet<>();
 
-        Point2D.Double observerVirtualPointDouble = new Point2D.Double(virtualSquareCenter.getX(), virtualSquareCenter.getY());
-
-        for (int guiX = 0; guiX < GUI_WIDTH; guiX++) {
-            for (int guiY = 0; guiY < GUI_HEIGHT; guiY++) {
+        Point2D.Double virtualSquareCenterDouble = new Point2D.Double(virtualSquareCenter.getX(), virtualSquareCenter.getY());
+        int rayDensity = 4;
+        for (int guiX = 0; guiX < GUI_WIDTH; guiX += rayDensity) {
+            for (int guiY = 0; guiY < GUI_HEIGHT; guiY += rayDensity) {
 
                 int squareGUIStartX = (GUI_WIDTH - SQUARE_SIZE) / 2; // 190
                 int squareGUIStartY = (GUI_HEIGHT - SQUARE_SIZE) / 2; // 190
@@ -135,22 +137,47 @@ public class Visualization
                         guiY >= squareGUIStartY && guiY < squareGUIEndY) {
                     continue; // This pixel belongs to the blue square, don't draw over it
                 }
-                double virtualTargetX = (double) (guiX - (GUI_WIDTH / 2)) + observerVirtualPointDouble.getX();
-                double virtualTargetY = (double) ((GUI_HEIGHT / 2) - guiY) + observerVirtualPointDouble.getY();
 
-                double dirX = virtualTargetX - observerVirtualPointDouble.getX();
-                double dirY = virtualTargetY - observerVirtualPointDouble.getY();
+                Point2D.Double virtualTarget = GUItoVirtual(pointToPoint2D(new Point(guiX, guiY)));
+
+                double dirX = virtualTarget.x - virtualSquareCenterDouble.getX();
+                double dirY = virtualTarget.y - virtualSquareCenterDouble.getY();
 
                 Vector2D direction = new Vector2D(dirX, dirY);
 
-                Shape hitShape = boundingVolumeHierarchy.intersectRay(observerVirtualPointDouble, direction);
-
+                Shape hitShape = boundingVolumeHierarchy.intersectRay(virtualSquareCenterDouble, direction);
                 if (hitShape != null) {
-                    pixelsToDisplay.add(new Point(guiX, guiY));
+                    Point2D.Double intersection = hitShape.findIntersection(point2DToPoint(virtualSquareCenter), direction);
+                    if (intersection != null) {
+                        Point guiPoint = point2DToPoint(virtualToGUI(intersection));
+                        if (guiPoint.x >= 0 && guiPoint.x < GUI_WIDTH && guiPoint.y >= 0 && guiPoint.y < GUI_HEIGHT) {
+                            pixelsToDisplay.add(guiPoint);
+                        }
+                    }
                 }
             }
         }
-        System.out.println(pixelsToDisplay);
-        return pixelsToDisplay;
+
+        return new LinkedList<>(pixelsToDisplay);
+    }
+
+    private Point2D.Double pointToPoint2D(Point point){
+        return new Point2D.Double(point.x, point.y);
+    }
+
+    private Point point2DToPoint(Point2D.Double point){
+        return new Point((int) point.x, (int) point.y);
+    }
+
+    private Point2D.Double virtualToGUI(Point2D.Double point) {
+        double guiX = (point.x - virtualSquareCenter.getX()) + GUI_WIDTH / 2.0;
+        double guiY = (GUI_HEIGHT / 2.0) - (point.y - virtualSquareCenter.getY());
+        return new Point2D.Double(guiX, guiY);
+    }
+
+    private Point2D.Double GUItoVirtual(Point2D.Double point) {
+        double virtualX = (point.x - GUI_WIDTH / 2.0) + virtualSquareCenter.getX();
+        double virtualY = (GUI_HEIGHT / 2.0 - point.y) + virtualSquareCenter.getY();
+        return new Point2D.Double(virtualX, virtualY);
     }
 }
