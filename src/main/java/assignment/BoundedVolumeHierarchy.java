@@ -30,27 +30,27 @@ public class BoundedVolumeHierarchy implements BVH
         this();
         buildBVH(shapes);
     }
-
-    public static void main(String[] args) {
-        BoundedVolumeHierarchy bvh = new BoundedVolumeHierarchy();
-        ArrayList<Triangle> triangles = new ArrayList<>();
-        Random rand = new Random();
-        for (int i = 0; i < 10; i++) {
-            Triangle tri = new Triangle(new Point(rand.nextInt(10), rand.nextInt(10)), new Point(rand.nextInt(10), rand.nextInt(10)), new Point(rand.nextInt(10), rand.nextInt(10)));
-            bvh.insert(tri);
-            triangles.add(tri);
-        }
-        System.out.println("Triangles: " + triangles.size());
-        System.out.println(bvh.toStringDepths());
-
-        bvh.remove(triangles.remove(3));
-        bvh.remove(triangles.remove(8));
-        bvh.remove(triangles.remove(5));
-
-        System.out.println("Removed triangles: " + triangles.size());
-        System.out.println(bvh.toStringDepths());
-
-    }
+//
+//    public static void main(String[] args) {
+//        BoundedVolumeHierarchy bvh = new BoundedVolumeHierarchy();
+//        ArrayList<Triangle> triangles = new ArrayList<>();
+//        Random rand = new Random();
+//        for (int i = 0; i < 10; i++) {
+//            Triangle tri = new Triangle(new Point(rand.nextInt(10), rand.nextInt(10)), new Point(rand.nextInt(10), rand.nextInt(10)), new Point(rand.nextInt(10), rand.nextInt(10)));
+//            bvh.insert(tri);
+//            triangles.add(tri);
+//        }
+//        System.out.println("Triangles: " + triangles.size());
+//        System.out.println(bvh.toString());
+//
+//        bvh.remove(triangles.remove(3));
+//        bvh.remove(triangles.remove(8));
+//        bvh.remove(triangles.remove(5));
+//
+//        System.out.println("Removed triangles: " + triangles.size());
+//        System.out.println(bvh.toString());
+//
+//    }
 
     @Override
     public void setSplitMethod(SplitMethod splitMethod)
@@ -84,7 +84,7 @@ public class BoundedVolumeHierarchy implements BVH
         }
 
         if (shapeList.size() == 1) {
-            return new BVHNode(shapeList.getFirst());
+            return new BVHNode(shapeList.get(0));
         }
 
         int medianIndex = partitionByMedian(shapeList, axis);
@@ -431,7 +431,7 @@ public class BoundedVolumeHierarchy implements BVH
         toStringRecursive(node.rightChild, depth + 1, sb);
     }
 
-    public String toStringDepths() {
+    private String toStringDepths() {
         if (this.root == null) {
             return "";
         }

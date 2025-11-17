@@ -10,6 +10,8 @@ public class GUI
 {
     public static Visualization visualization = new Visualization();
 
+    private static final int SHAPE_COUNT = 10;
+
     public static void main(String[] args)
     {
         JFrame frame = new JFrame("BVH Visualization");
@@ -19,6 +21,15 @@ public class GUI
         frame.add(bvhVisualization);
         frame.setVisible(true);
         frame.setResizable(false);
+
+        LinkedList<Shape> shapes = new LinkedList<>();
+        for (int i = 0; i < SHAPE_COUNT; i++) {
+            shapes.add(new Triangle(new Point(100 + i * 100, 100  + i * 100), new Point(0 + i * 100, 100 + i * 100), new Point(100 + i * 100, 0 + i * 100)));
+        }
+        BoundedVolumeHierarchy boundingVolumeHierarchy = new BoundedVolumeHierarchy();
+        boundingVolumeHierarchy.buildBVH(shapes);
+
+        visualization.setBoundingVolumeHierarchy(boundingVolumeHierarchy);
     }
 }
 

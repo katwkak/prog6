@@ -16,7 +16,6 @@ public class Visualization
     private static final int GUI_WIDTH = 400;
     private static final int GUI_HEIGHT = 400;
     private static final int SQUARE_SIZE = 21;
-    private static final int SHAPE_COUNT = 10;
     private static final int STEP_PIXELS = 5;
 
 
@@ -26,12 +25,6 @@ public class Visualization
     public Visualization ()
     {
         this.virtualSquareCenter = new Point2D.Double(0, 0); // Default virtual center
-        LinkedList<Shape> shapes = new LinkedList<>();
-        for (int i = 0; i < SHAPE_COUNT; i++) {
-            shapes.add(new Triangle(new Point(100 + i * 100, 100  + i * 100), new Point(0 + i * 100, 100 + i * 100), new Point(100 + i * 100, 0 + i * 100)));
-        }
-        this.boundingVolumeHierarchy = new BoundedVolumeHierarchy(shapes);
-        System.out.println("Bounding volume hierarchy: " + this.boundingVolumeHierarchy);
     }
 
     public Visualization(BoundedVolumeHierarchy boundingVolumeHierarchy) {
@@ -135,7 +128,7 @@ public class Visualization
 
                 if (guiX >= squareGUIStartX && guiX < squareGUIEndX &&
                         guiY >= squareGUIStartY && guiY < squareGUIEndY) {
-                    continue; // This pixel belongs to the blue square, don't draw over it
+                    continue;
                 }
 
                 Point2D.Double virtualTarget = GUItoVirtual(pointToPoint2D(new Point(guiX, guiY)));
